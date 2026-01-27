@@ -2,10 +2,9 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 
-use commands::general::RedditSearch;
 use poise::{command, say_reply, ReplyHandle};
 use serenity::client::Client;
-use serenity::{gateway::ShardManager, prelude::*, Result as SerenityResult};
+use serenity::{prelude::*, Result as SerenityResult};
 
 use log::error;
 
@@ -15,34 +14,11 @@ use commands::*;
 type CommandError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = ::std::result::Result<T, CommandError>;
 
-struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
-}
-
 struct Data {
-    reddit: Arc<Mutex<RedditSearch>>,
-    //chan_store: Arc<Mutex<TempChannelStore>>,
+    rule34_auth: rule34::Auth,
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-
-//struct Handler;
-
-//#[async_trait]
-//impl EventHandler for Handler {
-//async fn voice_state_update(
-//&self,
-//ctx: serenity::client::Context,
-//_: Option<VoiceState>,
-//state: VoiceState,
-//) {
-//if let Some(id) = state.guild_id {
-//check_temp_chans(&ctx, &id).await;
-//}
-//}
-//}
 
 /// Show this menu
 #[command(track_edits, prefix_command)]
@@ -64,10 +40,26 @@ You can edit your message to the bot and the bot will edit its response.",
 async fn main() {
     env_logger::init();
 
-    let mut token_file = File::open("bot_token.txt").unwrap();
-    let mut token = String::new();
-    token_file.read_to_string(&mut token).unwrap();
-    token = token.trim().to_owned();
+    let discord_token = {
+        let mut token_file = File::open("bot_token.txt").unwrap();
+        let mut token = String::new();
+        token_file.read_to_string(&mut token).unwrap();
+
+        token.trim().to_owned()
+    };
+
+    let (r34_user_id, r34_api_key) = {
+        let mut token_file = File::open("r34_api.txt").unwrap();
+        let mut content = String::new();
+        token_file.read_to_string(&mut content).unwrap();
+
+        let mut iter = content.split_whitespace();
+
+        (
+            iter.next().unwrap().to_owned(),
+            iter.next().unwrap().to_owned(),
+        )
+    };
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -79,37 +71,28 @@ async fn main() {
                 case_insensitive_commands: true,
                 ..Default::default()
             },
-            commands: vec![
-                help(),
-                ping(),
-                general::reddit(),
-                //general::tempchan(),
-                rule34::rule34(),
-            ],
+            commands: vec![help(), ping(), rule34::rule34()],
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
+        .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    reddit: Arc::new(Mutex::new(RedditSearch::new())),
-                    //chan_store: Arc::new(Mutex::new(TempChannelStore::new())),
+                    rule34_auth: rule34::Auth {
+                        user_id: r34_user_id,
+                        api_key: r34_api_key,
+                    },
                 })
             })
         })
         .build();
 
     let intents = GatewayIntents::non_privileged().union(GatewayIntents::MESSAGE_CONTENT);
-    let mut client = Client::builder(&token, intents)
+    let mut client = Client::builder(&discord_token, intents)
         //.event_handler(Handler)
         .framework(framework)
         .await
         .expect("Err creating client");
-
-    //{
-    //let mut data = client.data.write().await;
-    //data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-    //}
 
     if let Err(error) = client.start().await {
         error!("Client ended: {:?}", error)
