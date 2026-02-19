@@ -2,3 +2,5 @@
 **/*.rs.bk
 /bot_token.txt
 /db
+/.direnv
+/.env

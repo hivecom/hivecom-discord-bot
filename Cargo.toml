@@ -18,3 +18,4 @@ serenity = { version = "0.12", features = ["voice"] }
 poise = "0.6.1"
 serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
+dotenv = "0.15.0"

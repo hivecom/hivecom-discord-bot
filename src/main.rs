@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use poise::{command, say_reply, ReplyHandle};
@@ -38,10 +39,14 @@ You can edit your message to the bot and the bot will edit its response.",
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().ok();
     env_logger::init();
 
     let discord_token = {
-        let mut token_file = File::open("bot_token.txt").unwrap();
+        let token_path =
+            PathBuf::from(std::env::var("BOT_TOKEN_PATH").expect("BOT_TOKEN_PATH not set"));
+
+        let mut token_file = File::open(token_path).unwrap();
         let mut token = String::new();
         token_file.read_to_string(&mut token).unwrap();
 
@@ -49,7 +54,10 @@ async fn main() {
     };
 
     let (r34_user_id, r34_api_key) = {
-        let mut token_file = File::open("r34_api.txt").unwrap();
+        let r34_api_path =
+            PathBuf::from(std::env::var("R34_API_PATH").expect("R34_API_PATH not set"));
+
+        let mut token_file = File::open(r34_api_path).unwrap();
         let mut content = String::new();
         token_file.read_to_string(&mut content).unwrap();
 
