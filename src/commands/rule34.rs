@@ -29,12 +29,17 @@ pub async fn rule34(
         .split(' ')
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>();
+
     // TODO Terrible
-    let tags = tags
+    let mut tags = tags
         .join(" ")
         .replace(", ", ",")
         .replace(' ', "_")
         .replace(',', " ");
+
+    if !tags.contains("ai_generated") {
+        tags.push_str(" -ai_generated");
+    }
 
     let response = match get_amount(&tags, &ctx.data().rule34_auth).await {
         Ok(amount) => {
