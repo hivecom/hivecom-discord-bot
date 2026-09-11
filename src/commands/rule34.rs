@@ -1,5 +1,6 @@
 use poise::{command, say_reply};
 use rand::{thread_rng, Rng};
+use reqwest::header::HeaderValue;
 use reqwest::{header, Client};
 use url::form_urlencoded;
 
@@ -69,7 +70,7 @@ async fn get_amount(tags: &str, auth: &Auth) -> Result<u64> {
     use std::str::FromStr;
 
     let url: String = form_urlencoded::Serializer::new(String::from(
-        "https://rule34.xxx/index.php?page=dapi&s=post&q=index",
+        "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index",
     ))
     .append_pair("user_id", &auth.user_id)
     .append_pair("api_key", &auth.api_key)
@@ -83,7 +84,7 @@ async fn get_amount(tags: &str, auth: &Auth) -> Result<u64> {
 
 async fn get_url(tags: &str, pid: u64, auth: &Auth) -> Result<String> {
     let url: String = form_urlencoded::Serializer::new(String::from(
-        "https://rule34.xxx/index.php?page=dapi&s=post&q=index",
+        "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index",
     ))
     .append_pair("user_id", &auth.user_id)
     .append_pair("api_key", &auth.api_key)
